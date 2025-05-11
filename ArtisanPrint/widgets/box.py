@@ -1,3 +1,5 @@
+from .padding import PaddingType, unpack, apply_padding
+
 class BoxArt:
     """Defines characters to render boxes.
 
@@ -75,24 +77,28 @@ class BoxWidget(Widget):
         widget: Widget,
         title: str = "",
         art=None,
-        title_align: str = "center"  # 'left', 'center', 'right'
+        title_align: str = "center",  # 'left', 'center', 'right'
+        padding: PaddingType = 1,
     ):
         """
         :param widget: Inner widget to render inside the box.
         :param title: Optional string displayed on the top border.
         :param art: BoxArt instance specifying box style.
         :param title_align: Alignment of title: 'left', 'center', or 'right'.
+        :param padding: Padding around the widget in CSS style.
         """
         super().__init__(widget, title, art)
         self.widget = widget
         self.title = title
         self.art = art or ROUNDED
         self.title_align = title_align
+        self.padding = unpack(padding)
 
     def getlines(self, max_width: int) -> list[str]:
         # Reserve 2 columns for left and right borders
-        inner_max_width = max_width - 2
+        inner_max_width = max_width - 2 - self.padding[1] - self.padding[3]
         inner_lines = self.widget.getlines(inner_max_width)
+        inner_lines = apply_padding(inner_lines, self.padding)
 
         # Prepare title text
         title_text = f" {self.title} " if self.title else ""

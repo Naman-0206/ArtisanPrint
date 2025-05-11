@@ -1,4 +1,8 @@
 from .widget import Widget
+from typing import Tuple, Union
+
+
+PaddingType = Union[int, Tuple[int], Tuple[int, int], Tuple[int, int, int, int]]
 
 
 class PaddingWidget(Widget):
@@ -23,7 +27,6 @@ class PaddingWidget(Widget):
 
         if isinstance(padding, int):
             self.top = self.right = self.bottom = self.left = padding
-
 
         elif isinstance(padding, (tuple, list)):
             if len(padding) == 4:
@@ -59,3 +62,34 @@ class PaddingWidget(Widget):
         bottom_padding = [empty_line] * self.bottom
 
         return top_padding + padded_lines + bottom_padding
+
+
+def unpack(padding: PaddingType):
+    if isinstance(padding, int):
+        return padding, padding, padding, padding
+
+    elif isinstance(padding, (tuple, list)):
+        if len(padding) == 4:
+            return padding
+        elif len(padding) == 2:
+            return padding[0], padding[1], padding[0], padding[1]
+        elif len(padding) == 1:
+            return padding[0], padding[0], padding[0], padding[0]
+        else:
+            raise ValueError(
+                "Padding must be an int or a tuple of 1, 2, or 4 ints")
+
+    else:
+        raise ValueError("Padding must be an int or a tuple/list of ints")
+
+
+def apply_padding(lines, padding: PaddingType):
+    if not padding: return lines
+    top, right, bottom, left = unpack(padding)
+    max_width = len(max(lines, default=""))
+    empty_line = " " * max_width
+
+    return [empty_line]*top+[
+        (" " * left) + line + (" " * right)
+        for line in lines
+    ]+[empty_line]*bottom

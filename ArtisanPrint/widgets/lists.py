@@ -1,5 +1,5 @@
 from .widget import Widget
-
+from .padding import unpack, PaddingType, apply_padding
 
 class ListWidget(Widget):
     """
@@ -7,16 +7,24 @@ class ListWidget(Widget):
     either in a vertical or horizontal layout, depending on available width.
     """
 
-    def __init__(self, widgets: list[Widget], direction: str = "auto", separator: str = " "):
+    def __init__(
+            self,
+            widgets: list[Widget],
+            direction: str = "auto",
+            separator: str = " ",
+            padding: PaddingType = 0
+    ):
         """
         :param widgets: List of Widget instances to be rendered.
         :param direction: 'vertical', 'horizontal', or 'auto' (chooses based on width).
         :param separator: String used to separate widgets in horizontal layout.
+        :param padding: Padding around the widget in CSS style.
         """
         super().__init__(widgets, direction, separator)
         self.widgets = widgets
         self.direction = direction
         self.separator = separator
+        self.padding = unpack(padding)
 
     def getlines(self, max_width: int) -> list[str]:
         """
@@ -33,7 +41,7 @@ class ListWidget(Widget):
 
         # Estimate how much width would be needed in horizontal layout
         max_horizontal_width = sum(
-            [max((len(line) for line in lines), default=0) for lines in child_lines_list]
+            len(max(lines)) for lines in child_lines_list
         ) + len(self.separator) * (len(child_lines_list) - 1)
 
         # Decide layout based on direction or width fit
@@ -42,10 +50,11 @@ class ListWidget(Widget):
             layout = "horizontal" if max_horizontal_width <= max_width else "vertical"
         elif layout == "horizontal" and max_horizontal_width > max_width:
             layout = "vertical"
-
+        content_lines = []
         if layout == "horizontal":
             # Determine the height of the tallest widget
-            max_height = max((len(lines) for lines in child_lines_list), default=0)
+            max_height = max((len(lines)
+                             for lines in child_lines_list), default=0)
 
             # Vertically pad all widgets to match max_height
             padded_lines_list = []
@@ -73,10 +82,16 @@ class ListWidget(Widget):
                 else:
                     # Fill with spaces to maintain alignment
                     lines.append((" " * len(self.separator)).join(line_group))
-            return lines
+            content_lines = lines
 
         else:  # vertical layout
             lines = []
             for child_lines in child_lines_list:
                 lines.extend(child_lines)
-            return lines
+            content_lines = lines
+
+
+        # Add padding
+        padded_content_lines = apply_padding(content_lines, self.padding) 
+
+        return padded_content_lines
